@@ -71,28 +71,11 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
-          # gh-pagesブランチが存在するかチェック
-          if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
-            echo "gh-pages branch exists, checking out..."
-            git fetch origin gh-pages
-            git checkout gh-pages
-            # リモートの最新状態を取得してマージ
-            git pull origin gh-pages --rebase
-          else
-            echo "gh-pages branch does not exist, creating orphan branch..."
-            git checkout --orphan gh-pages
-            git rm -rf .
-            # 初期ファイルを作成
-            echo "# GitHub Pages" > README.md
-            git add README.md
-            git commit -m "Initial gh-pages commit"
-            # 初回プッシュ前にリモートの状態を確認
-            git fetch origin gh-pages 2>/dev/null || true
-            if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
-              git pull origin gh-pages --rebase --allow-unrelated-histories
-            fi
-            git push origin gh-pages
-          fi
+          echo "gh-pages branch exists, checking out..."
+          git fetch origin gh-pages
+          git checkout gh-pages
+          # リモートの最新状態を取得してマージ
+          git pull origin gh-pages --rebase
 
       # PR用ディレクトリを作成してビルドファイルをコピー
       - name: Deploy to gh-pages
