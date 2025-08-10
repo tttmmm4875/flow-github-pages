@@ -6,6 +6,8 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // GitHub Pages用のベースパス設定（ユーザーサイトの場合はルート）
+  base: '/flow-github-pages/' ,
   plugins: [
     vue(),
     vueDevTools(),
