@@ -55,7 +55,15 @@ jobs:
         env:
           VITE_USE_MOCK: 'true'
           PR_NUMBER: ${{ github.event.number }}
-        run: npm run build
+        run: npm run build:pr
+
+      # ビルド結果を一時ディレクトリに退避
+      - name: Backup build artifacts
+        run: |
+          # 一時ディレクトリを作成してビルド結果を退避
+          mkdir -p $HOME/build-backup
+          cp -r dist/pr-${{ github.event.number }}/* $HOME/build-backup/
+          echo "Build artifacts backed up to $HOME/build-backup"
 
       # gh-pagesブランチをチェックアウト（存在しない場合は作成）
       - name: Setup gh-pages branch
@@ -101,9 +109,14 @@ jobs:
             rm -rf "$PR_DIR"
           fi
           
-          # ビルドファイルをPR用ディレクトリにコピー
+          # 一時ディレクトリから退避したファイルをPR用ディレクトリに移動
           mkdir -p "$PR_DIR"
-          cp -r dist/* "$PR_DIR/"
+          mv $HOME/build-backup/* "$PR_DIR/"
+          echo "Moved build artifacts from backup to $PR_DIR"
+          
+          # 空になった一時ディレクトリを削除
+          rmdir $HOME/build-backup
+          echo "Removed empty backup directory"
           
           # 変更をコミット・プッシュ（失敗時はリトライ）
           git add .
