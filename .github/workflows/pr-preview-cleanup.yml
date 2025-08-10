@@ -1,0 +1,92 @@
+name: PR Preview Cleanup
+
+# PRがクローズされた時にトリガー
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+# 必要な権限設定
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  cleanup-preview:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # ソースコードをチェックアウト
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # gh-pagesブランチをチェックアウト
+      - name: Checkout gh-pages branch
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # gh-pagesブランチが存在するかチェック
+          if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
+            git fetch origin gh-pages
+            git checkout gh-pages
+          else
+            echo "gh-pages branch does not exist, nothing to cleanup"
+            exit 0
+          fi
+
+      # PR用ディレクトリを削除
+      - name: Remove PR directory
+        run: |
+          PR_DIR="pr-${{ github.event.number }}"
+          
+          if [ -d "$PR_DIR" ]; then
+            echo "Removing directory: $PR_DIR"
+            rm -rf "$PR_DIR"
+            
+            # 変更をコミット・プッシュ
+            git add .
+            git commit -m "Cleanup PR #${{ github.event.number }} preview directory"
+            git push origin gh-pages
+            
+            echo "cleanup_performed=true" >> $GITHUB_ENV
+          else
+            echo "Directory $PR_DIR does not exist, nothing to cleanup"
+            echo "cleanup_performed=false" >> $GITHUB_ENV
+          fi
+
+      # クリーンアップ完了をPRにコメント
+      - name: Comment cleanup completion
+        if: env.cleanup_performed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            const cleanupMessage = [
+              '🧹 **プレビュー環境をクリーンアップしました**',
+              '',
+              `PR #${prNumber} のプレビュー環境が正常に削除されました。`,
+              'GitHub Pagesから該当ディレクトリが除去されています。'
+            ].join('\n');
+            
+            github.rest.issues.createComment({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: cleanupMessage
+            })
+
+      # エラー時のコメント
+      - name: Comment on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ **プレビュー環境のクリーンアップに失敗しました**\n\n詳細はGitHub Actionsのログをご確認ください。'
+            })

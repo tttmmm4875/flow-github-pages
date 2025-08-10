@@ -94,7 +94,9 @@ vue3-swagger-verification/
 
 ### フロントエンド
 - `npm run dev` - フロントエンド開発サーバー起動
-- `npm run build` - 本番用ビルド
+- `npm run build` - 本番用ビルド（`VITE_USE_MOCK=false`）
+- `npm run build:mock` - モック環境ビルド（`VITE_USE_MOCK=true`）
+- `npm run build:pr` - PR環境ビルド（PR番号指定）
 - `npm run preview` - ビルド後のプレビュー
 - `npm run type-check` - TypeScript型チェック
 - `npm run generate-types` - API定義から型定義を生成
@@ -165,15 +167,56 @@ API定義を変更した後は、以下のコマンドで型定義を再生成�
 npm run generate-types
 ```
 
-## 🚀 本番ビルド
+## 🚀 デプロイメント
+
+### 本番ビルド
 
 ```bash
-# 型チェック付きビルド
+# 型チェック付きビルド（本番用）
 npm run build
+
+# モック環境ビルド
+npm run build:mock
 
 # ビルド結果のプレビュー
 npm run preview
 ```
+
+### GitHub Pages自動デプロイ
+
+このプロジェクトはGitHub Pagesによる自動デプロイに対応しています：
+
+#### 本番環境
+- **トリガー**: `main`ブランチへのプッシュ時
+- **URL**: `https://{username}.github.io/flow-github-pages/`
+- **環境**: `VITE_USE_MOCK=false`（実際のAPIサーバー使用）
+
+#### PRプレビュー環境
+- **トリガー**: プルリクエスト作成・更新時
+- **URL**: `https://{username}.github.io/flow-github-pages/pr-{PR番号}/`
+- **環境**: `VITE_USE_MOCK=true`（モックデータ使用）
+- **機能**:
+  - PR作成時に自動でプレビュー環境をビルド・デプロイ
+  - プレビューURLをPRに自動コメント
+  - PRクローズ時に自動クリーンアップ
+
+#### デプロイフロー
+
+1. **PR作成時**:
+   ```
+   PR作成 → ビルド開始コメント → モック環境ビルド → 
+   gh-pages更新 → プレビューURL通知
+   ```
+
+2. **PR更新時**:
+   ```
+   PR更新 → 自動再ビルド → プレビュー環境更新
+   ```
+
+3. **PRクローズ時**:
+   ```
+   PRクローズ → プレビュー環境削除 → クリーンアップ完了通知
+   ```
 
 ## 📄 ライセンス
 

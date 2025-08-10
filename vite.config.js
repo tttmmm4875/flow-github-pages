@@ -6,8 +6,21 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // GitHub Pages用のベースパス設定（ユーザーサイトの場合はルート）
-  base: '/flow-github-pages/' ,
+  // GitHub Pages用のベースパス設定
+  // PR環境の場合は /flow-github-pages/pr-{PR番号}/
+  // 本番環境の場合は /flow-github-pages/
+  base: process.env.PR_NUMBER 
+    ? `/flow-github-pages/pr-${process.env.PR_NUMBER}/`
+    : '/flow-github-pages/',
+  
+  // ビルド設定
+  build: {
+    // PR環境の場合は dist/pr-{PR番号}/ に出力
+    // 本番環境の場合は dist/ に出力
+    outDir: process.env.PR_NUMBER 
+      ? `dist/pr-${process.env.PR_NUMBER}`
+      : 'dist',
+  },
   plugins: [
     vue(),
     vueDevTools(),

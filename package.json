@@ -9,6 +9,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build",
+    "build:mock": "VITE_USE_MOCK=true vue-tsc && vite build",
+    "build:pr": "VITE_USE_MOCK=true PR_NUMBER=${PR_NUMBER:-test} vue-tsc && vite build",
     "type-check": "vue-tsc --noEmit",
     "preview": "vite preview",
     "generate-types": "openapi-typescript docs/api.yaml -o src/types/api.d.ts",
