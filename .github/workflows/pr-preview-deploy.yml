@@ -68,6 +68,8 @@ jobs:
             echo "gh-pages branch exists, checking out..."
             git fetch origin gh-pages
             git checkout gh-pages
+            # リモートの最新状態を取得してマージ
+            git pull origin gh-pages --rebase
           else
             echo "gh-pages branch does not exist, creating orphan branch..."
             git checkout --orphan gh-pages
@@ -76,12 +78,21 @@ jobs:
             echo "# GitHub Pages" > README.md
             git add README.md
             git commit -m "Initial gh-pages commit"
+            # 初回プッシュ前にリモートの状態を確認
+            git fetch origin gh-pages 2>/dev/null || true
+            if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
+              git pull origin gh-pages --rebase --allow-unrelated-histories
+            fi
             git push origin gh-pages
           fi
 
       # PR用ディレクトリを作成してビルドファイルをコピー
       - name: Deploy to gh-pages
         run: |
+          # 最新の状態を取得（他の並行実行による変更を反映）
+          git fetch origin gh-pages
+          git rebase origin/gh-pages
+          
           # PR用ディレクトリを作成
           PR_DIR="pr-${{ github.event.number }}"
           
@@ -94,10 +105,25 @@ jobs:
           mkdir -p "$PR_DIR"
           cp -r dist/* "$PR_DIR/"
           
-          # 変更をコミット・プッシュ
+          # 変更をコミット・プッシュ（失敗時はリトライ）
           git add .
-          git commit -m "Deploy PR #${{ github.event.number }} preview" || echo "No changes to commit"
-          git push origin gh-pages
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Deploy PR #${{ github.event.number }} preview"
+            # プッシュ前に最新状態を再確認してリトライ
+            for i in {1..3}; do
+              if git push origin gh-pages; then
+                echo "Push successful"
+                break
+              else
+                echo "Push failed, retrying... (attempt $i/3)"
+                git fetch origin gh-pages
+                git rebase origin/gh-pages
+                sleep 2
+              fi
+            done
+          fi
 
       # プレビューリンクをPRにコメント
       - name: Comment preview link
