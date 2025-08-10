@@ -5,6 +5,8 @@ import { getMockResponse } from './mocks/mock'
 // 型定義
 type TestResponse = operations['getTestMessage']['responses'][200]['content']['application/json']
 type SampleResponse = operations['getSampleData']['responses'][200]['content']['application/json']
+type HelloRequest = operations['postHello']['requestBody']['content']['application/json']
+type HelloResponse = operations['postHello']['responses'][200]['content']['application/json']
 
 // 環境変数でモック切り替え（デフォルトはtrue）
 const useMock = import.meta.env.VITE_USE_MOCK !== 'false'
@@ -29,9 +31,12 @@ if (useMock) {
         if (contentType.includes('text/html') || typeof response.data === 'string') {
           console.log(`🎭 Processing mock request (HTML detected): /mock${path}`)
           
-          try {
-            const mockData = getMockResponse(path)
-            console.log(`🎭 Mock success response for /mock${path}:`, mockData)
+                  try {
+          // POSTリクエストの場合、リクエストボディを取得
+          const method = response.config.method?.toUpperCase() || 'GET'
+          const requestBody = response.config.data ? JSON.parse(response.config.data) : undefined
+          const mockData = getMockResponse(path, method, requestBody)
+          console.log(`🎭 Mock success response for /mock${path}:`, mockData)
             
             // モックレスポンスに変換
             return Promise.resolve({
@@ -71,8 +76,11 @@ if (useMock) {
         console.log(`🎭 Processing mock request (error): /mock${path}`)
         
         try {
+          // POSTリクエストの場合、リクエストボディを取得
+          const method = config.method?.toUpperCase() || 'GET'
+          const requestBody = config.data ? JSON.parse(config.data) : undefined
           // モックデータを取得
-          const mockData = getMockResponse(path)
+          const mockData = getMockResponse(path, method, requestBody)
           
           console.log(`🎭 Mock success response for /mock${path}:`, mockData)
           
@@ -121,6 +129,10 @@ export const getSample = (): Promise<SampleResponse> => {
 
 export const getTest = (): Promise<TestResponse> => {
   return axiosClient.get<TestResponse>('/test').then((res) => res.data)
+}
+
+export const postHello = (request: HelloRequest): Promise<HelloResponse> => {
+  return axiosClient.post<HelloResponse>('/hello', request).then((res) => res.data)
 }
 
 // デバッグ情報

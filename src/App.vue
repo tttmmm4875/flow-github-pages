@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import axios from 'axios'
-import { getTest, getSample } from './api'
+import { getTest, getSample, postHello } from './api'
 import type { operations } from './types/api'
 
 // 型定義
 type TestResponse = operations['getTestMessage']['responses'][200]['content']['application/json']
 type SampleResponse = operations['getSampleData']['responses'][200]['content']['application/json']
+type HelloResponse = operations['postHello']['responses'][200]['content']['application/json']
 type ErrorResponse = operations['getTestMessage']['responses'][500]['content']['application/json']
 
 // レスポンス履歴を管理する配列
-const responses = ref<((TestResponse | SampleResponse) & { timestamp: string; type: 'test' | 'sample' })[]>([])
+const responses = ref<((TestResponse | SampleResponse | HelloResponse) & { timestamp: string; type: 'test' | 'sample' | 'hello' })[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 
@@ -94,6 +95,48 @@ const callSampleApi = async () => {
   }
 }
 
+// HelloAPIを呼び出す関数
+const callHelloApi = async () => {
+  isLoading.value = true
+  error.value = null
+  
+  try {
+    // 乱数でIDを生成（1〜1000の範囲）
+    const randomId = Math.floor(Math.random() * 1000) + 1
+    
+    // api.tsのpostHelloメソッドを使用
+    const apiResponse = await postHello({ id: randomId })
+    
+    // 現在時刻を取得
+    const now = new Date()
+    
+    // レスポンス履歴に追加
+    responses.value.unshift({
+      ...apiResponse,
+      timestamp: now.toLocaleString(),
+      type: 'hello'
+    })
+    
+    console.log('Hello API called successfully:', apiResponse)
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      if (err.response?.status === 500) {
+        const errorData = err.response.data as ErrorResponse
+        error.value = `サーバーエラー: ${errorData.error}`
+      } else if (err.code === 'ECONNREFUSED') {
+        error.value = 'APIサーバーに接続できません。サーバーが起動していることを確認してください。'
+      } else {
+        error.value = `API呼び出しエラー: ${err.message}`
+      }
+    } else {
+      error.value = err instanceof Error ? err.message : 'Unknown error occurred'
+    }
+    console.error('Hello API call failed:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
 
 </script>
 
@@ -126,6 +169,13 @@ const callSampleApi = async () => {
           >
             {{ isLoading ? 'Loading...' : '🎭 Mock Sample API を呼び出す' }}
           </button>
+          <button 
+            @click="callHelloApi" 
+            :disabled="isLoading"
+            class="api-button api-button-secondary"
+          >
+            {{ isLoading ? 'Loading...' : '🎭 Mock Hello API を呼び出す' }}
+          </button>
         </div>
         
         <div v-if="error" class="error">
@@ -150,6 +200,7 @@ const callSampleApi = async () => {
               <div class="response-value">Value: {{ (response as any).value }}</div>
               <div class="response-message">Message: {{ (response as any).message }}</div>
             </div>
+            <div v-else-if="response.type === 'hello'" class="response-message">{{ response.message }}</div>
           </div>
         </div>
       </section>
@@ -323,6 +374,10 @@ const callSampleApi = async () => {
 
 .response-sample {
   border-left-color: #f59e0b;
+}
+
+.response-hello {
+  border-left-color: #10b981;
 }
 
 .response-content {

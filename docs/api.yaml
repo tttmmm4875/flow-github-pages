@@ -50,6 +50,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /hello:
+    post:
+      summary: Hello endpoint
+      description: Returns greeting message with request ID
+      operationId: postHello
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HelloRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
     TestResponse:
@@ -85,3 +109,21 @@ components:
           description: Error message
       required:
         - error
+    HelloRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Request ID
+          example: 1
+      required:
+        - id
+    HelloResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Greeting message with request ID
+          example: "request id→ 1"
+      required:
+        - message
