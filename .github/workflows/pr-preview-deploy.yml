@@ -83,24 +83,7 @@ jobs:
           # 最新の状態を取得（他の並行実行による変更を反映）
           git fetch origin gh-pages
           git rebase origin/gh-pages
-          
-          # PR用ディレクトリを作成
-          PR_DIR="pr-${{ github.event.number }}"
-          
-          # 既存のPRディレクトリがあれば削除
-          if [ -d "$PR_DIR" ]; then
-            rm -rf "$PR_DIR"
-          fi
-          
-          # 一時ディレクトリから退避したファイルをPR用ディレクトリに移動
-          mkdir -p "$PR_DIR"
-          mv $HOME/build-backup/* "$PR_DIR/"
-          echo "Moved build artifacts from backup to $PR_DIR"
-          
-          # 空になった一時ディレクトリを削除
-          rmdir $HOME/build-backup
-          echo "Removed empty backup directory"
-          
+                    
           # 変更をコミット・プッシュ（失敗時はリトライ）
           git add .
           if git diff --staged --quiet; then
@@ -120,6 +103,20 @@ jobs:
               fi
             done
           fi
+      
+      # GitHub Pages用の設定
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      # dist配下のファイルをアップロード（既にビルド済み）
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
       # プレビューリンクをPRにコメント
       - name: Comment preview link
