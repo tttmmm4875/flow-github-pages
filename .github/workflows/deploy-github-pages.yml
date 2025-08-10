@@ -1,0 +1,50 @@
+name: Deploy to GitHub Pages
+
+# トリガー設定：手動実行とpagesブランチへのプッシュ
+on:
+  # 手動実行を可能にする
+  workflow_dispatch:
+  
+  # pagesブランチにプッシュされた時に実行
+  push:
+    branches:
+      - gh-pages
+
+# GitHub Pagesへのデプロイに必要な権限設定
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同時実行の制御（同じデプロイが重複しないように）
+concurrency:
+  group: "gh-pages"
+  cancel-in-progress: false
+
+jobs:
+  # デプロイジョブ（ビルド済みファイルをそのままデプロイ）
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    runs-on: ubuntu-latest
+    
+    steps:
+      # ソースコードをチェックアウト
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      # GitHub Pages用の設定
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      # dist配下のファイルをアップロード（既にビルド済み）
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
