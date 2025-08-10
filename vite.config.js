@@ -10,7 +10,7 @@ export default defineConfig({
   // PR環境の場合は /flow-github-pages/pr-{PR番号}/
   // 本番環境の場合は /flow-github-pages/
   base: process.env.PR_NUMBER 
-    ? `/flow-github-pages/pr-${process.env.PR_NUMBER}/`
+    ? `/flow-github-pages/dist/pr-${process.env.PR_NUMBER}/`
     : '/flow-github-pages/',
   
   // ビルド設定
