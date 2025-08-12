@@ -143,7 +143,7 @@ const callHelloApi = async () => {
 <template>
   <div class="app">
     <header class="header">
-      <h1>Vue3 + Swagger 検証用リポジトリ</h1>
+      <h1>Vue3 + Swagger 検証用リポジトリ テスト</h1>
       <p>openapi-typescriptを用いた型安全なAPI呼び出しのデモ</p>
     </header>
 
